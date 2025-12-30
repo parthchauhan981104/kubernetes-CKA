@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: manual-scheduled-pod
+  labels:
+    env: demo
+    type: frontend
+spec:
+  nodeName: cluster1-worker
+  containers:
+  - name: nginx-container
+    image: nginx
+    ports:
+    - containerPort: 80

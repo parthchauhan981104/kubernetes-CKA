@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Config
+
+# ---- Cluster definitions ----
+clusters:
+- name: cluster-alpha
+  cluster:
+    server: https://alpha.example.com:6443
+    certificate-authority: /etc/kubernetes/pki/alpha-ca.crt   # CA for cluster-alpha
+
+- name: cluster-beta
+  cluster:
+    server: https://beta.example.com:6443
+    certificate-authority: /etc/kubernetes/pki/beta-ca.crt    # CA for cluster-beta
+
+# ---- Users section ----
+users:
+- name: admin-alpha
+  user:
+    client-certificate: /etc/kubernetes/pki/admin-alpha.crt   # Admin cert signed by alpha CA
+    client-key: /etc/kubernetes/pki/admin-alpha.key
+
+- name: rk-beta
+  user:
+    client-certificate: /home/rk/.kube/rk-beta.crt            # rk cert signed by beta CA
+    client-key: /home/rk/.kube/rk-beta.key
+
+# ---- Contexts section ----
+contexts:
+- name: alpha-admin-context
+  context:
+    cluster: cluster-alpha
+    user: admin-alpha
+    namespace: kube-system                                    # Admin works in kube-system
+
+- name: beta-rk-context
+  context:
+    cluster: cluster-beta
+    user: rk-beta
+    namespace: default                                        # rk works in default namespace
+
+# ---- Current context ----
+current-context: alpha-admin-context

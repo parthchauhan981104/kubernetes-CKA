@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-rs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      env: demo                 # Must match template labels
+    matchExpressions:
+    - key: tier
+      operator: In
+      values: ["frontend", "backend"]   # Only Pods with tier=frontend OR tier=backend
+    - key: version
+      operator: NotIn
+      values: ["v1", "v2"]              # Exclude Pods with version=v1 or v2
+    - key: region
+      operator: Exists                  # Must have a region label (any value)
+    - key: deprecated
+      operator: DoesNotExist            # Must NOT have a deprecated label
+  template:
+    metadata:
+      labels:
+        env: demo
+        tier: frontend
+        version: v3
+        region: us-east
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.23
+        ports:
+        - containerPort: 80

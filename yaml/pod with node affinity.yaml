@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis-with-affinity-advanced
+  labels:
+    app: redis
+spec:
+  containers:
+  - name: redis
+    image: redis:latest
+  affinity:
+    nodeAffinity:
+      # --- REQUIRED rules (Pod will only schedule if these match) ---
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          # Require disk type to be either ssd or nvme
+          - key: disk
+            operator: In
+            values:
+            - ssd
+            - nvme
+        - matchExpressions:
+          # Exclude nodes with disk=hdd
+          - key: disk
+            operator: NotIn
+            values:
+            - hdd
+        - matchExpressions:
+          # Require that the "region" label exists
+          - key: region
+            operator: Exists
+        - matchExpressions:
+          # Require that the "deprecated" label does NOT exist
+          - key: deprecated
+            operator: DoesNotExist
+        - matchExpressions:
+          # Require nodes with at least 4 CPUs (example numeric label)
+          - key: cpu-count
+            operator: Gt
+            values:
+            - "4"
+
+      # --- PREFERRED rules (Pod *prefers* these nodes, but can still run elsewhere). Nodes with the highest total weight score is chosen. ---
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 80
+        preference:
+          matchExpressions:
+          # Prefer nvme disks
+          - key: disk
+            operator: In
+            values:
+            - nvme
+      - weight: 50
+        preference:
+          matchExpressions:
+          # Prefer nodes with cpu-count less than 16
+          - key: cpu-count
+            operator: Lt
+            values:
+            - "16"
+      - weight: 20
+        preference:
+          matchExpressions:
+          # Prefer sas disks, but lower priority
+          - key: disk
+            operator: In
+            values:
+            - sas

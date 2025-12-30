@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pod-and-node-admin         # Name of the ClusterRole
+  labels:
+    rbac.example: "true"           # Optional labels for organization
+rules:
+# Rule 1: Core API group (""), cluster-scoped resource
+- apiGroups: [""]                  # "" = core API group (Pods, Services, Nodes, ConfigMaps, etc.)
+  resources: ["nodes"]             # Cluster-scoped resource
+  verbs: ["get", "list", "watch", "delete"]
+
+# Rule 2: Core API group (""), namespace-scoped resource
+- apiGroups: [""]                  # Core group again
+  resources: ["pods"]              # Namespace-scoped resource
+  verbs: ["get", "list", "watch", "create", "delete"]
+
+# Rule 3: apps API group
+- apiGroups: ["apps"]              # apps group → Deployments, ReplicaSets, StatefulSets
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "update"]

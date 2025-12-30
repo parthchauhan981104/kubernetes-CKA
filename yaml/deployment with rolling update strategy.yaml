@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    env: demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      env: demo
+  strategy:
+    type: RollingUpdate                # Deployment strategy type
+    rollingUpdate:
+      maxUnavailable: 1                 # At most 1 Pod unavailable during update
+      maxSurge: 1                       # At most 1 extra Pod above desired replicas
+  revisionHistoryLimit: 5               # Keep last 5 revisions for rollback
+  minReadySeconds: 10                   # Pod must be ready for 10s before considered available
+  progressDeadlineSeconds: 60           # Fail update if not complete within 60s
+  template:
+    metadata:
+      labels:
+        env: demo
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.21               # Explicit version tag for clarity
+        ports:
+        - containerPort: 80

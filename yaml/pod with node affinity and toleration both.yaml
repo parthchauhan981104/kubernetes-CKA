@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: targeted-pod
+  labels:
+    app: redis
+  annotations: 
+    explanation: | 
+      This Pod is scheduled using node affinity. It targets nodes with disk=nvme and zone=us-east. Tolerations allow it to bypass NoSchedule taints.
+spec:
+  containers:
+  - name: redis
+    image: redis:latest
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: disk
+            operator: In
+            values:
+            - nvme
+          - key: zone
+            operator: In
+            values:
+            - us-east
+
+  tolerations:
+  - key: "workload"
+    operator: "Equal"
+    value: "high"
+    effect: "NoSchedule"

@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pod-and-node-admin-binding   # Name of the binding
+subjects:
+- kind: User                         # Subject type: User, Group, or ServiceAccount
+  name: rk                           # Identity of the user (from kubeconfig or external auth)
+  apiGroup: rbac.authorization.k8s.io # Required for User/Group subjects
+# You could also bind to a ServiceAccount:
+# - kind: ServiceAccount
+#   name: app-sa
+#   namespace: demo-ns
+roleRef:
+  kind: ClusterRole                  # Must match the kind of the role being bound
+  name: pod-and-node-admin           # Name of the ClusterRole defined above
+  apiGroup: rbac.authorization.k8s.io

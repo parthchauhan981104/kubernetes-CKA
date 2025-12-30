@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: probes-mixed-success-pod
+spec:
+  containers:
+  - name: myapp
+    image: my-slow-app:latest
+    ports:
+    - containerPort: 8080
+
+    # Startup probe using command (exec)
+    startupProbe:
+      exec:
+        command: ["cat", "/app/ready"]   # succeeds if file exists
+      failureThreshold: 30               # allow up to 5 minutes (30 × 10s)
+      periodSeconds: 10
+      successThreshold: 1                # must succeed once before considered healthy
+
+    # Liveness probe using TCP socket
+    livenessProbe:
+      tcpSocket:
+        port: 8080                       # check if TCP port is open
+      initialDelaySeconds: 20
+      periodSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1                # one success is enough to mark alive
+
+    # Readiness probe using HTTP GET
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      failureThreshold: 3
+      successThreshold: 2                # must succeed twice consecutively before Pod is marked Ready

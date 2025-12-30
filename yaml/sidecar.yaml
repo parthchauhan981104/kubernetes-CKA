@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app.kubernetes.io/name: MyApp
+spec:
+  volumes:
+  - name: shared-logs
+    emptyDir: {}   # ephemeral volume shared between containers
+
+  containers:
+  - name: myapp-container
+    image: busybox:1.28
+    env:
+    - name: FIRSTNAME
+      value: "Parth"
+    command: ['sh', '-c', 'echo The app is running! >> /var/log/myapp/app.log && sleep 3600']
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log/myapp
+
+  - name: log-sidecar
+    image: busybox:1.28
+    command: ['sh', '-c', 'tail -n+1 -f /var/log/myapp/app.log']
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log/myapp
+
+  initContainers:
+  - name: init-myservice
+    image: busybox:1.28
+    command: ['sh', '-c']
+    args: ['until nslookup cluster-svc.default.svc.cluster.local; do echo waiting for myservice; sleep 2; done']
+
+  - name: init-mydb
+    image: busybox:1.28
+    command: ['sh', '-c']
+    args: ['until nslookup mydb.default.svc.cluster.local; do echo waiting for mydb; sleep 2; done']
