@@ -1,0 +1,87 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: three-tier-policy
+  namespace: demo-ns
+spec:
+  # Apply this policy to ALL Pods in the namespace
+  podSelector: {}
+  # We want to control both ingress and egress traffic
+  policyTypes:
+  - Ingress
+  - Egress
+
+  # -------------------------------
+  # INGRESS RULES
+  # -------------------------------
+  ingress:
+  # 1. Default deny: If no rules match, ingress is blocked.
+  #    (This is implicit once you define ingress rules.)
+
+  # 2. Allow frontend -> backend
+  - from:
+    - podSelector:
+        matchLabels:
+          role: frontend               # Only Pods with role=frontend can talk
+    ports:
+    - protocol: TCP
+      port: 80                         # Backend listens on port 80
+
+  # 3. Allow backend -> mysql (DB)
+  - from:
+    - podSelector:
+        matchLabels:
+          role: backend                # Only backend Pods can talk
+    ports:
+    - protocol: TCP
+      port: 3306                       # MySQL listens on port 3306
+
+  # 4. Allow monitoring namespace to scrape metrics
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          purpose: monitoring          # Any Pod in monitoring namespace
+    ports:
+    - protocol: TCP
+      port: 80                         # Example: scrape HTTP metrics
+
+  # -------------------------------
+  # EGRESS RULES
+  # -------------------------------
+  egress:
+  # 5. Allow backend Pods to reach DB
+  - to:
+    - podSelector:
+        matchLabels:
+          name: mysql                  # Target DB Pod
+    ports:
+    - protocol: TCP
+      port: 3306
+
+  # 6. Allow frontend Pods to reach backend
+  - to:
+    - podSelector:
+        matchLabels:
+          role: backend
+    ports:
+    - protocol: TCP
+      port: 80
+
+  # 7. Allow egress to external IP range (e.g., API calls)
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.0/24              # Allow traffic only to this subnet
+        except:
+        - 10.0.0.5/32                  # Block specific IP
+    ports:
+    - protocol: TCP
+      port: 443                        # Allow HTTPS traffic
+
+  # 8. Allow DB Pods to talk only to prod namespace (e.g., backup jobs)
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          env: prod
+    ports:
+    - protocol: TCP
+      port: 3306
