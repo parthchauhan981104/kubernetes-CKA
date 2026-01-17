@@ -1,0 +1,80 @@
+# -------------------------------
+# 1. emptyDir volume (ephemeral)
+# -------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-with-volumes
+  namespace: demo-ns
+spec:
+  containers:
+  - name: app
+    image: nginx
+    volumeMounts:
+    - name: cache-volume
+      mountPath: /cache                # Ephemeral cache storage
+    - name: hostpath-volume
+      mountPath: /hostdata             # HostPath mount
+    - name: pvc-volume
+      mountPath: /persistent           # PVC mount
+  volumes:
+  - name: cache-volume
+    emptyDir: {}                       # Created when Pod starts, deleted when Pod stops
+
+  # -------------------------------
+  # 2. hostPath volume (maps host dir)
+  # -------------------------------
+  - name: hostpath-volume
+    hostPath:
+      path: /data/host                 # Path on the node
+      type: DirectoryOrCreate          # Create if not exists
+
+  # -------------------------------
+  # 3. PersistentVolumeClaim usage
+  # -------------------------------
+  - name: pvc-volume
+    persistentVolumeClaim:
+      claimName: my-pvc                # Must exist and be bound to a PV
+---
+# -------------------------------
+# 4. PersistentVolume definition
+# -------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-pv
+spec:
+  capacity:
+    storage: 1Gi                       # Capacity management
+  accessModes:
+  - ReadWriteOnce                      # Access mode
+  persistentVolumeReclaimPolicy: Retain # Reclaim policy
+  storageClassName: manual             # StorageClass binding
+  hostPath:
+    path: /data/pv                     # Example: hostPath backing
+---
+# -------------------------------
+# 5. PersistentVolumeClaim definition
+# -------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+  namespace: demo-ns
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi                     # Request capacity
+  storageClassName: manual             # Must match PV
+---
+# -------------------------------
+# 6. StorageClass definition
+# -------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: manual
+provisioner: kubernetes.io/no-provisioner # Static provisioning (manual PVs)
+volumeBindingMode: Immediate
